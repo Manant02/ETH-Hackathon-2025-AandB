@@ -35,6 +35,9 @@ def load_and_visualize_states(data_dir):
             # Visualisiere den State
             plt.figure(figsize=(15, 6))
             
+
+
+            
             # Realteil
             plt.subplot(1, 2, 1)
             # Normalisiere den Realteil
