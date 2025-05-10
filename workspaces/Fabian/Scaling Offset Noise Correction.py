@@ -1,0 +1,89 @@
+import dynamiqs as dq
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy as sp
+import pickle
+
+
+def correcting_wigner(xvec, yvec, wigner_noisy):
+    def plot_wigner(xvals, yvals, wigner_values):
+        plt.contourf(
+            xvals,
+            yvals,
+            wigner_values.T,
+            levels=100,
+            cmap="seismic",
+            vmin=-2 / np.pi,
+            vmax=2 / np.pi,
+        )
+        plt.colorbar()
+
+    def calculate_offset(wigner_noisy):
+        # 1. compute local mean of W and local mean of W² over a small window
+        win = 10  # size of the patch in pixels
+        mean1 = sp.ndimage.uniform_filter(wigner_noisy, size=win)
+        mean2 = sp.ndimage.uniform_filter(wigner_noisy**2, size=win)
+
+        # 2. estimate the local variance: Var = E[W²] – (E[W])²
+        local_var = mean2 - mean1**2
+
+        # 3. pick a threshold for “flatness” (tune this)
+        var_thr = np.percentile(local_var, 5)
+        # e.g. take the bottom 5% of variances
+
+        # 4. build a mask of flat regions
+        flat_mask = local_var <= var_thr
+
+        # 5. estimate b by averaging wigner_noisy over all flat pixels
+        b_est = np.mean(wigner_noisy[flat_mask])
+
+        print("Estimated offset b =", b_est)
+        return b_est
+
+    # only keep important features
+    def flattening_flat_regions(wigner_noisy, thr):
+
+        # 1. build binary masks of positive and negative
+        pos_mask = (wigner_noisy > 0).astype(float)
+        neg_mask = (wigner_noisy < 0).astype(float)
+
+        # 2. choose a window size (in pixels) over which to look for clusters
+        win = 11  # e.g. 11×11 neighborhood
+
+        # 3. compute local counts (actually local fractions) of positives/negatives
+        # uniform_filter sums (here since mask is 0/1, it gives count) then we normalize by total window size
+        local_pos_frac = sp.ndimage.uniform_filter(pos_mask, size=win)
+        local_neg_frac = sp.ndimage.uniform_filter(neg_mask, size=win)
+
+        # 4. define your cluster thresholds
+        # for instance, if more than 30% of the window is positive (resp. negative):
+        thr = thr
+
+        cluster_mask = (local_pos_frac > thr) & (local_neg_frac > thr)
+
+        # 5. make a heavily‐smoothed version of the whole noisy Wigner
+        smooth_heavy = sp.ndimage.gaussian_filter(wigner_noisy, sigma=5)
+
+        # 6. combine: apply the heavy smooth only inside clusters
+        wigner_denoised = wigner_noisy.copy()
+        wigner_denoised_np = np.array(wigner_denoised)
+        wigner_denoised_np[cluster_mask] = smooth_heavy[cluster_mask]
+
+        return wigner_denoised_np, cluster_mask
+
+    cluster_mask = flattening_flat_regions(wigner_noisy, 0.4)[1]
+    relevant_mask = np.logical_not(cluster_mask)
+    relevant_mask_true_values = relevant_mask.sum()
+
+    wigner_noisy_offsetted = wigner_noisy - calculate_offset(wigner_noisy)
+    integral = (
+        np.sum(wigner_noisy_offsetted[relevant_mask])
+        / wigner_noisy_offsetted.shape[0] ** 2
+        * 12**2
+    )
+    wigner_noisy_corrected = wigner_noisy_offsetted / integral
+
+    wigner_denoised_corrected = flattening_flat_regions(wigner_noisy_corrected, 0.3)
+
+    return xvec, yvec, wigner_denoised_corrected
