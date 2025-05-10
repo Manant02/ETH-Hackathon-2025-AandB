@@ -28,6 +28,7 @@ def load_and_visualize_states(data_dir):
             # Visualisiere den State
             wigner_function = wigner(state, xmax=6, ymax=6, npixels=50)
             plt.contourf(wigner_function[0], wigner_function[1], wigner_function[2], cmap='seismic', levels=100, vmax=np.pi/2, vmin=-np.pi/2)
+            plt.colorbar(label='Wigner-Funktion')
             plt.tight_layout()
             plt.show()
             
