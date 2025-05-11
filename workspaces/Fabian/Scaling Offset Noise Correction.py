@@ -118,8 +118,9 @@ def load_wigner(file):
     return wigner_fct
 
 
-wigner_fct = load_wigner("data/synthetic/noisy_wigner_5.pickle")
-xvec, yvec, W_synthetic = correcting_wigner(*wigner_fct)
+wigner_fct = load_wigner("data/experimental/wigner_cat_plus_25.pickle")
+
+xvec, yvec, W_experimental = correcting_wigner(*wigner_fct)
 
 """N = 20
 
@@ -144,7 +145,8 @@ b = 0.3
 sigma = 0.1
 noise = np.random.normal(0.0, scale=sigma, size=wigner.shape)
 
-wigner_noisy = a * wigner + b * np.ones_like(wigner) + noise"""
+wigner_noisy = a * wigner + b * np.ones_like(wigner) + noise
+"""
 
 
 def plot_wigner(xvals, yvals, wigner_values):
@@ -157,9 +159,33 @@ def plot_wigner(xvals, yvals, wigner_values):
         vmin=-2 / np.pi,
         vmax=2 / np.pi,
     )
+    plt.title("Correction of Offset, Noise and Scaling Experimental Data")
+    plt.xlabel("x")
+    plt.ylabel("p")
     plt.colorbar()
 
 
+def plot_wigner(xvals, yvals, wigner_values, ax):
+    im = ax.contourf(
+        xvals,
+        yvals,
+        wigner_values.T,
+        levels=100,
+        cmap="seismic",
+        vmin=-2 / np.pi,
+        vmax=2 / np.pi,
+    )
+    ax.set_xlabel("x")
+    ax.set_ylabel("p")
+    return im
+
+
+fig, axs = plt.subplots(1, 2, figsize=(14, 5))
+im = plot_wigner(xvec, yvec, W_experimental, axs[1])
+fig.colorbar(im)
 """xvec, yvec, W = correcting_wigner(xvec, yvec, wigner_noisy)"""
-plot_wigner(xvec, yvec, W_synthetic)
+im = plot_wigner(xvec, yvec, wigner_fct[2], axs[0])
+fig.colorbar(im)
+fig.suptitle("Correction of Offset, Noise and Scaling Experimental Data")
+
 plt.show()
