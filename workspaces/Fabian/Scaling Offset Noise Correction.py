@@ -118,7 +118,7 @@ def load_wigner(file):
     return wigner_fct
 
 
-wigner_fct = load_wigner("data/experimental/wigner_cat_plus_25.pickle")
+wigner_fct = load_wigner("data/experimental/wigner_cat_minus.pickle")
 
 xvec, yvec, W_experimental = correcting_wigner(*wigner_fct)
 
