@@ -1,5 +1,6 @@
 import dynamiqs as dq
 import jax.numpy as jnp
+import jax
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
@@ -20,7 +21,20 @@ def plot_wigner(xvals, yvals, wigner_values):
 
 
 def correcting_wigner(xvec, yvec, wigner_noisy):
-    wigner_noisy = jnp.nan_to_num(wigner_noisy, nan=0.0)
+    # wigner_noisy = jnp.nan_to_num(wigner_noisy, nan=0.0)
+
+    def fill_nan_with_global_mean(x):
+        # 1) mask of NaNs
+        nan_mask = jnp.isnan(x)
+        # 2) mean over non-NaN entries
+        global_mean = jnp.nanmean(x)
+        # 3) replace NaNs with the mean
+        filled = jnp.where(nan_mask, global_mean, x)
+        return filled, nan_mask
+
+    # example usage:
+    wigner_filled, wigner_nan_mask = fill_nan_with_global_mean(wigner_noisy)
+    wigner_noisy = wigner_filled
 
     def calculate_offset(wigner_noisy):
         # 1. compute local mean of W and local mean of W² over a small window
@@ -87,8 +101,9 @@ def correcting_wigner(xvec, yvec, wigner_noisy):
         / wigner_noisy_offsetted.shape[0] ** 2
         * 12**2
     )
-
-    wigner_noisy_corrected = wigner_noisy_offsetted / integral
+    wigner_noisy_offsetted_np = np.array(wigner_noisy_offsetted)
+    wigner_noisy_offsetted_np[wigner_nan_mask] = 0
+    wigner_noisy_corrected = wigner_noisy_offsetted_np / integral
 
     wigner_denoised_corrected = flattening_flat_regions(wigner_noisy_corrected, 0.3, 0)[
         0
