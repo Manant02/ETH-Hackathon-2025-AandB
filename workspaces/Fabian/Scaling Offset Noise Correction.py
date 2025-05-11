@@ -118,7 +118,7 @@ def load_wigner(file):
     return wigner_fct
 
 
-wigner_fct = load_wigner("data/experimental/wigner_cat_minus.pickle")
+wigner_fct = load_wigner("data/synthetic/noisy_wigner_8.pickle")
 
 xvec, yvec, W_experimental = correcting_wigner(*wigner_fct)
 
@@ -159,12 +159,13 @@ def plot_wigner(xvals, yvals, wigner_values):
         vmin=-2 / np.pi,
         vmax=2 / np.pi,
     )
-    plt.title("Correction of Offset, Noise and Scaling Experimental Data")
+    plt.title("Input Noisy Data")
     plt.xlabel("x")
     plt.ylabel("p")
     plt.colorbar()
 
 
+"""
 def plot_wigner(xvals, yvals, wigner_values, ax):
     im = ax.contourf(
         xvals,
@@ -183,9 +184,12 @@ def plot_wigner(xvals, yvals, wigner_values, ax):
 fig, axs = plt.subplots(1, 2, figsize=(14, 5))
 im = plot_wigner(xvec, yvec, W_experimental, axs[1])
 fig.colorbar(im)
-"""xvec, yvec, W = correcting_wigner(xvec, yvec, wigner_noisy)"""
+
 im = plot_wigner(xvec, yvec, wigner_fct[2], axs[0])
 fig.colorbar(im)
-fig.suptitle("Correction of Offset, Noise and Scaling Experimental Data")
+fig.suptitle("Correction of Offset, Noise and Scaling Noisy Data")
+"""
+
+plot_wigner(xvec, yvec, wigner_fct[2])
 
 plt.show()
